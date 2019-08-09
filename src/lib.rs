@@ -1,5 +1,9 @@
 pub struct Post {
     state: Option<Box<dyn State>>,
+    data: PostData,
+}
+
+struct PostData {
     content: String,
 }
 
@@ -7,12 +11,12 @@ impl Post {
     pub fn new() -> Post {
         Post {
             state: Some(Box::new(Draft {})),
-            content: String::new(),
+            data: PostData{ content: String::new()},
         }
     }
 
     pub fn add_text(&mut self, string: &str) {
-        self.state.as_ref().unwrap().add_text(self, string)
+        self.state.as_ref().unwrap().add_text(&mut self.data, string)
     }
 
     pub fn content(&self) -> &str {
@@ -42,12 +46,10 @@ trait State {
     fn request_review(self: Box<Self>) -> Box<dyn State>;
     fn approve(self: Box<Self>) -> Box<dyn State>;
     fn reject(self: Box<Self>) -> Box<dyn State>;
-    fn content<'a>(&self, post: &'a Post) -> &'a str {
+    fn content<'a>(&self, _post: &'a Post) -> &'a str {
         ""
     }
-    fn add_text<'a>(&self, post: &'a mut Post, string: &str) {
-        "";
-    }
+    fn add_text<'a>(&self, _post: &'a mut PostData, _string: &str) {}
 }
 
 struct Draft {}
@@ -65,7 +67,8 @@ impl State for Draft {
         self
     }
 
-    fn add_text<'a>(&self, post: &'a mut Post, string: &str) {
+    fn add_text<'a>(&self, post: &'a mut PostData, string: &str) {
+        println!("I'm adding some content to the string");
         &mut post.content.push_str(string);
     }
 }
@@ -106,7 +109,7 @@ impl State for Published {
     }
 
     fn content<'a>(&self, post: &'a Post) -> &'a str {
-        &post.content
+        &post.data.content
     }
 
     fn reject(self: Box<Self>) -> Box<dyn State> {
